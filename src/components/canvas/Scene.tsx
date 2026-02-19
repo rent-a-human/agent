@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid } from '@react-three/drei';
+import { Grid } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import { Cursor } from './Cursor';
 import { InteractiveBox } from './InteractiveBox';
 import { HologramPanel } from './HologramPanel';
 import { VideoPanel } from './VideoPanel';
+import { WebPanel } from './WebPanel';
 import { useHandRaycaster } from '../../hooks/useHandRaycaster';
 import { CameraController } from './CameraController';
 
@@ -46,11 +47,12 @@ export const Scene = () => {
                     content="Core integrity: 98%. Thermal systems optimal. Neural interface synced."
                 />
                 
-                <HologramPanel 
-                    position={[2.5, 1, -1]} 
+                <WebPanel 
+                    position={[3.5, 1, -1]} 
                     rotation={[0, -0.5, 0]} 
-                    title="NETWORK TRAFFIC" 
-                    content="Inbound packets verified. Encryption: AES-256. Latency: 12ms."
+                    scale={[0.35, 0.35, 0.35]}
+                    url="http://localhost:5174/chess/"
+                    title="TACTICAL STRATEGY"
                 />
 
                 {/* Center Video Panel */}

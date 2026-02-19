@@ -15,6 +15,7 @@ export const InteractiveBox = ({ position, color = "#00f0ff", label }: Interacti
     const meshRef = useRef<THREE.Mesh>(null);
     const materialRef = useRef<THREE.MeshStandardMaterial>(null);
     const [localHover, setLocalHover] = useState(false);
+    const dwellTimerRef = useRef(0);
     
     // Global State
     const { selectedObject, setSelected, setHovered } = useStore();
@@ -24,46 +25,93 @@ export const InteractiveBox = ({ position, color = "#00f0ff", label }: Interacti
         if (!meshRef.current) return;
 
         // Custom collision detection
-        const { hands } = useStore.getState();
+        const { hands, face, lastHandActivity } = useStore.getState();
         const hand = hands.left.present ? hands.left : hands.right;
         
         let isOver = false;
+        
+        const now = Date.now();
+        const handsActive = (now - lastHandActivity) < 5000;
 
-        if (hand.present) {
-             const viewport = state.viewport;
-             const cx = -(hand.x - 0.5) * viewport.width;
-             const cy = -(hand.y - 0.5) * viewport.height;
-             
-             const dx = cx - position[0];
-             const dy = cy - position[1];
+        // Determine Cursor Position (World Space) - simplified replication of Cursor.tsx logic
+        let cursorX = 0;
+        let cursorY = 0;
+        let isActiveSource = false;
+
+        const viewport = state.viewport;
+
+        if (handsActive && hand.present) {
+             cursorX = -(hand.x - 0.5) * viewport.width;
+             cursorY = -(hand.y - 0.5) * viewport.height;
+             isActiveSource = true;
+        } else if (!handsActive && face.present) {
+             // Simple Head Mode
+             const sensitivity = 2.5;
+             cursorX = -(face.x - 0.5) * viewport.width * sensitivity;
+             cursorY = -(face.y - 0.5) * viewport.height * sensitivity;
+             isActiveSource = true;
+        }
+
+        if (isActiveSource) {
+             const dx = cursorX - position[0];
+             const dy = cursorY - position[1];
              const dist = Math.sqrt(dx*dx + dy*dy);
              
-             isOver = dist < 0.6; // Threshold
+             isOver = dist < 0.6; // Threshold matching geometry roughly
              
              // Update Local & Global Hover
              if (localHover !== isOver) {
                  setLocalHover(isOver);
                  setHovered(isOver ? (label || 'Box') : null); // Sync global
                  if (isOver) playSound.playHover();
-             }
-             
-             // Click Logic
-             if (isOver && hand.gesture === 'PINCH') {
-                 if (!isSelected) {
-                    playSound.playClick();
-                    setSelected(label || 'Unknown');
-                    
-                    if (label) {
-                        import('../../utils/voice').then(({ speak }) => {
-                            speak(`You selected: ${label}`);
-                        });
-                    }
+                 
+                 // Reset Dwell if lost hover
+                 if (!isOver) {
+                     useStore.getState().setDwellProgress(0);
                  }
              }
+             
+             // --- INTERACTION LOGIC ---
+             if (handsActive) {
+                 // Hand Click (Pinch)
+                 if (isOver && hand.gesture === 'PINCH') {
+                     if (!isSelected) {
+                        playSound.playClick();
+                        setSelected(label || 'Unknown');
+                        if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
+                     }
+                 }
+                 dwellTimerRef.current = 0; // Reset dwell if hands are active
+             } else {
+                 // Face Dwell Click
+                 if (isOver && !isSelected) {
+                     // Check if this box is the globally hovered one (to avoid multi-trigger)
+                     // ( Implicitly true if isOver with single cursor )
+                     
+                     // Increment
+                     dwellTimerRef.current += 1/60; // Approx 1 frame
+                     
+                     const progress = Math.min(dwellTimerRef.current / 1.0, 1);
+                     useStore.getState().setDwellProgress(progress);
+                     
+                     if (progress >= 1) {
+                         // TRIGGER CLICK
+                         playSound.playClick();
+                         setSelected(label || 'Unknown');
+                         if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
+                         dwellTimerRef.current = 0;
+                         useStore.getState().setDwellProgress(0);
+                     }
+                 } else {
+                     dwellTimerRef.current = 0;
+                 }
+            }
         } else {
             if (localHover) {
                 setLocalHover(false);
                 setHovered(null);
+                useStore.getState().setDwellProgress(0);
+                dwellTimerRef.current = 0;
             }
         }
         
@@ -71,12 +119,14 @@ export const InteractiveBox = ({ position, color = "#00f0ff", label }: Interacti
         const time = state.clock.getElapsedTime();
         
         // Rotation
-        meshRef.current.rotation.x += isSelected ? 0.02 : 0.01;
-        meshRef.current.rotation.y += isSelected ? 0.02 : 0;
+        if (meshRef.current) {
+            meshRef.current.rotation.x += isSelected ? 0.02 : 0.01;
+            meshRef.current.rotation.y += isSelected ? 0.02 : 0;
 
-        // Scale
-        const targetScale = localHover ? 1.2 : (isSelected ? 1.1 : 1);
-        meshRef.current.scale.setScalar(THREE.MathUtils.lerp(meshRef.current.scale.x, targetScale, 0.1));
+            // Scale
+            const targetScale = localHover ? 1.2 : (isSelected ? 1.1 : 1);
+            meshRef.current.scale.setScalar(THREE.MathUtils.lerp(meshRef.current.scale.x, targetScale, 0.1));
+        }
 
         // Material Visuals (Palpitating Effect)
         if (materialRef.current) {

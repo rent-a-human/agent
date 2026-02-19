@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useStore } from '../../store/useStore';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import * as THREE from 'three'; 
 
 // Helper for shortest-path angle interpolation
@@ -68,6 +68,84 @@ export const CameraController = () => {
     const thetaHistory = useRef<{ val: number, time: number }[]>([]);
     const panHistory = useRef<{ val: THREE.Vector3, time: number }[]>([]);
 
+    // --- KEYBOARD CONTROLS (Displacement) ---
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (useStore.getState().hoveredObject) return; // Don't move if interacting? Actually navigating while hovering is fine.
+
+            const sensitivity = 0.5;
+            const theta = smoothedState.current.theta;
+            
+            // Forward/Back based on Camera View (at current theta)
+            const camFwd = new THREE.Vector3(-Math.sin(theta), 0, -Math.cos(theta));
+            const camRight = new THREE.Vector3(Math.cos(theta), 0, -Math.sin(theta));
+
+            if (e.key === 'ArrowUp' || e.key === 'w') {
+                targetRef.current.add(camFwd.multiplyScalar(sensitivity));
+            }
+            if (e.key === 'ArrowDown' || e.key === 's') {
+                targetRef.current.add(camFwd.multiplyScalar(-sensitivity));
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                targetRef.current.add(camRight.multiplyScalar(-sensitivity));
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd') {
+                targetRef.current.add(camRight.multiplyScalar(sensitivity));
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // --- MOUSE CONTROLS (Orbiting) ---
+    useEffect(() => {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startTheta = 0;
+        let startCamY = 0;
+
+        const onMouseDown = (e: MouseEvent) => {
+             // Only Left Click (button 0)
+             if (e.button !== 0) return;
+             // Ignore if hovering UI? (Handled by pointer-events in DOM overlay)
+             // But we are in canvas. 
+             isDragging = true;
+             startX = e.clientX;
+             startY = e.clientY;
+             startTheta = orbitState.current.theta;
+             startCamY = orbitState.current.y;
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            
+            const deltaX = (e.clientX - startX) * -0.005; // Inverted X for natural orbit
+            const deltaY = (e.clientY - startY) * 0.02;
+
+            orbitState.current.theta = startTheta + deltaX;
+            
+            let newCamY = startCamY + deltaY;
+            newCamY = Math.max(-1, Math.min(8, newCamY));
+            orbitState.current.y = newCamY;
+        };
+
+        const onMouseUp = () => {
+             isDragging = false;
+        };
+
+        window.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        
+        return () => {
+            window.removeEventListener('mousedown', onMouseDown);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+    }, []);
+
     useFrame(({ clock }) => {
         if (!initialized.current) {
             smoothedState.current.target.copy(targetRef.current);
@@ -76,7 +154,15 @@ export const CameraController = () => {
             smoothedState.current.camY = camera.position.y;
             initialized.current = true;
         }
-
+        
+        // ... (Hand Logic Omitted for Brevity - Keeping existing Hand Logic below) ...
+        // Wait, I need to preserve the Hand Logic!
+        // The Replace Tool overwrites the block.
+        // I must include the entire useFrame or splice carefully.
+        // It's safer to insert the useEffects BEFORE useFrame, and keep useFrame intact?
+        // But the previous content showed useFrame logic. 
+        // I will re-inject the `useFrame` logic.
+        
         const time = clock.getElapsedTime();
         const rightHand = hands.right;
         const leftHand = hands.left;
@@ -85,7 +171,6 @@ export const CameraController = () => {
         if (!hoveredObject) {
             // --- RIGHT HAND: PAN & ZOOM ---
             if (rightHand.present && rightHand.gesture === 'PINCH') {
-                // ... (Existing Pan Logic)
                 // Reset Pan Inertia
                 inertiaState.current.panVelocity.set(0, 0, 0);
     

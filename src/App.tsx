@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { VideoFeed } from './components/webcam/VideoFeed';
 import { useHandTracking } from './hooks/useHandTracking';
+import { useFaceTracking } from './hooks/useFaceTracking';
 import { HandVisualizer } from './components/webcam/HandVisualizer';
 import { HudOverlay } from './components/dom/HudOverlay';
 import { Scene } from './components/canvas/Scene';
@@ -8,6 +9,7 @@ import { Scene } from './components/canvas/Scene';
 function App() {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   useHandTracking(videoElement);
+  useFaceTracking(videoElement);
 
   return (
     <div className="w-screen h-screen bg-jarvis-dark text-white overflow-hidden relative">
