@@ -1,4 +1,6 @@
 import { useStore } from '../../store/useStore';
+import { JoystickControl } from './JoystickControl';
+import { FullScreenToggle } from './FullScreenToggle';
 
 export const HudOverlay = () => {
   const { hands } = useStore();
@@ -50,6 +52,12 @@ export const HudOverlay = () => {
             {hand.present && <p className="text-jarvis-cyan animate-pulse">GESTURE: {hand.gesture}</p>}
         </div>
       </div>
+
+      {/* Joystick Control (Bottom Left, distinct from footer text) */}
+      <JoystickControl />
+      
+      {/* Fullscreen Toggle (Top Right) */}
+      <FullScreenToggle />
     </div>
   );
 };

@@ -68,15 +68,14 @@ export const CameraController = () => {
     const thetaHistory = useRef<{ val: number, time: number }[]>([]);
     const panHistory = useRef<{ val: THREE.Vector3, time: number }[]>([]);
 
-    // --- KEYBOARD CONTROLS (Displacement) ---
+    // --- KEYBOARD & JOYSTICK CONTROLS (Displacement) ---
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (useStore.getState().hoveredObject) return; // Don't move if interacting? Actually navigating while hovering is fine.
+            if (useStore.getState().hoveredObject) return; 
 
             const sensitivity = 0.5;
             const theta = smoothedState.current.theta;
             
-            // Forward/Back based on Camera View (at current theta)
             const camFwd = new THREE.Vector3(-Math.sin(theta), 0, -Math.cos(theta));
             const camRight = new THREE.Vector3(Math.cos(theta), 0, -Math.sin(theta));
 
@@ -98,7 +97,7 @@ export const CameraController = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // --- MOUSE CONTROLS (Orbiting) ---
+    // --- MOUSE & TOUCH CONTROLS (Orbiting) ---
     useEffect(() => {
         let isDragging = false;
         let startX = 0;
@@ -106,11 +105,9 @@ export const CameraController = () => {
         let startTheta = 0;
         let startCamY = 0;
 
+        // MOUSE Handlers
         const onMouseDown = (e: MouseEvent) => {
-             // Only Left Click (button 0)
              if (e.button !== 0) return;
-             // Ignore if hovering UI? (Handled by pointer-events in DOM overlay)
-             // But we are in canvas. 
              isDragging = true;
              startX = e.clientX;
              startY = e.clientY;
@@ -120,33 +117,68 @@ export const CameraController = () => {
 
         const onMouseMove = (e: MouseEvent) => {
             if (!isDragging) return;
-            
-            const deltaX = (e.clientX - startX) * -0.005; // Inverted X for natural orbit
+            const deltaX = (e.clientX - startX) * -0.005; 
             const deltaY = (e.clientY - startY) * 0.02;
-
             orbitState.current.theta = startTheta + deltaX;
-            
             let newCamY = startCamY + deltaY;
             newCamY = Math.max(-1, Math.min(8, newCamY));
             orbitState.current.y = newCamY;
         };
 
-        const onMouseUp = () => {
-             isDragging = false;
+        const onMouseUp = () => { isDragging = false; };
+
+        // TOUCH Handlers
+        const onTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                // Ignore if touching the joystick area (bottom-left)
+                // Heuristic: Joystick is bottom-left, say < 200px from left and > windowHeight - 200px from top
+                const touch = e.touches[0];
+                const isJoystickArea = touch.clientX < 200 && touch.clientY > (window.innerHeight - 200);
+                
+                if (!isJoystickArea) {
+                    isDragging = true;
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                    startTheta = orbitState.current.theta;
+                    startCamY = orbitState.current.y;
+                }
+            }
         };
+
+        const onTouchMove = (e: TouchEvent) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            const deltaX = (touch.clientX - startX) * -0.005; 
+            const deltaY = (touch.clientY - startY) * 0.02;
+            orbitState.current.theta = startTheta + deltaX;
+            let newCamY = startCamY + deltaY;
+            newCamY = Math.max(-1, Math.min(8, newCamY));
+            orbitState.current.y = newCamY;
+        };
+
+        const onTouchEnd = () => { isDragging = false; };
 
         window.addEventListener('mousedown', onMouseDown);
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
         
+        window.addEventListener('touchstart', onTouchStart);
+        window.addEventListener('touchmove', onTouchMove);
+        window.addEventListener('touchend', onTouchEnd);
+        
         return () => {
             window.removeEventListener('mousedown', onMouseDown);
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+
+            window.removeEventListener('touchstart', onTouchStart);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
         };
     }, []);
 
     useFrame(({ clock }) => {
+        // Initialize smoothed state on first run
         if (!initialized.current) {
             smoothedState.current.target.copy(targetRef.current);
             smoothedState.current.radius = orbitState.current.radius;
@@ -154,14 +186,27 @@ export const CameraController = () => {
             smoothedState.current.camY = camera.position.y;
             initialized.current = true;
         }
-        
-        // ... (Hand Logic Omitted for Brevity - Keeping existing Hand Logic below) ...
-        // Wait, I need to preserve the Hand Logic!
-        // The Replace Tool overwrites the block.
-        // I must include the entire useFrame or splice carefully.
-        // It's safer to insert the useEffects BEFORE useFrame, and keep useFrame intact?
-        // But the previous content showed useFrame logic. 
-        // I will re-inject the `useFrame` logic.
+
+        // Apply Joystick Input
+        const { joystickInput } = useStore.getState();
+        if (Math.abs(joystickInput.x) > 0.1 || Math.abs(joystickInput.y) > 0.1) {
+             const sensitivity = 0.1; // Per frame
+             const theta = smoothedState.current.theta;
+             
+             // Forward/Back (Joystick Y)
+             const camFwd = new THREE.Vector3(-Math.sin(theta), 0, -Math.cos(theta));
+             // Left/Right (Joystick X)
+             const camRight = new THREE.Vector3(Math.cos(theta), 0, -Math.sin(theta));
+             
+             // Joystick Y is typically positive up, negative down.
+             // We want positive Y to move forward (camFwd).
+             if (joystickInput.y !== 0) {
+                 targetRef.current.add(camFwd.multiplyScalar(joystickInput.y * sensitivity));
+             }
+             if (joystickInput.x !== 0) {
+                 targetRef.current.add(camRight.multiplyScalar(joystickInput.x * sensitivity));
+             }
+        }
         
         const time = clock.getElapsedTime();
         const rightHand = hands.right;

@@ -25,94 +25,100 @@ export const InteractiveBox = ({ position, color = "#00f0ff", label }: Interacti
         if (!meshRef.current) return;
 
         // Custom collision detection
-        const { hands, face, lastHandActivity } = useStore.getState();
-        const hand = hands.left.present ? hands.left : hands.right;
-        
-        let isOver = false;
-        
-        const now = Date.now();
-        const handsActive = (now - lastHandActivity) < 5000;
+        const { hands, face, trackingMode } = useStore.getState();
 
-        // Determine Cursor Position (World Space) - simplified replication of Cursor.tsx logic
-        let cursorX = 0;
-        let cursorY = 0;
-        let isActiveSource = false;
+        if (trackingMode !== 'MOUSE') {
+            const hand = hands.left.present ? hands.left : hands.right;
+            
+            let isOver = false;
+            
+            // Determine Cursor Position (World Space) - simplified replication of Cursor.tsx logic
+            let cursorX = 0;
+            let cursorY = 0;
+            let isActiveSource = false;
 
-        const viewport = state.viewport;
+            const viewport = state.viewport;
 
-        if (handsActive && hand.present) {
-             cursorX = -(hand.x - 0.5) * viewport.width;
-             cursorY = -(hand.y - 0.5) * viewport.height;
-             isActiveSource = true;
-        } else if (!handsActive && face.present) {
-             // Simple Head Mode
-             const sensitivity = 2.5;
-             cursorX = -(face.x - 0.5) * viewport.width * sensitivity;
-             cursorY = -(face.y - 0.5) * viewport.height * sensitivity;
-             isActiveSource = true;
-        }
+            if (trackingMode === 'HAND' && hand.present) {
+                 cursorX = -(hand.x - 0.5) * viewport.width;
+                 cursorY = -(hand.y - 0.5) * viewport.height;
+                 isActiveSource = true;
+            } else if (trackingMode === 'EYE' && face.present) {
+                 // Simple Head Mode
+                 const sensitivity = 2.5;
+                 cursorX = -(face.x - 0.5) * viewport.width * sensitivity;
+                 cursorY = -(face.y - 0.5) * viewport.height * sensitivity;
+                 isActiveSource = true;
+            }
 
-        if (isActiveSource) {
-             const dx = cursorX - position[0];
-             const dy = cursorY - position[1];
-             const dist = Math.sqrt(dx*dx + dy*dy);
-             
-             isOver = dist < 0.6; // Threshold matching geometry roughly
-             
-             // Update Local & Global Hover
-             if (localHover !== isOver) {
-                 setLocalHover(isOver);
-                 setHovered(isOver ? (label || 'Box') : null); // Sync global
-                 if (isOver) playSound.playHover();
+            if (isActiveSource) {
+                 const dx = cursorX - position[0];
+                 const dy = cursorY - position[1];
+                 const dist = Math.sqrt(dx*dx + dy*dy);
                  
-                 // Reset Dwell if lost hover
-                 if (!isOver) {
-                     useStore.getState().setDwellProgress(0);
-                 }
-             }
-             
-             // --- INTERACTION LOGIC ---
-             if (handsActive) {
-                 // Hand Click (Pinch)
-                 if (isOver && hand.gesture === 'PINCH') {
-                     if (!isSelected) {
-                        playSound.playClick();
-                        setSelected(label || 'Unknown');
-                        if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
-                     }
-                 }
-                 dwellTimerRef.current = 0; // Reset dwell if hands are active
-             } else {
-                 // Face Dwell Click
-                 if (isOver && !isSelected) {
-                     // Check if this box is the globally hovered one (to avoid multi-trigger)
-                     // ( Implicitly true if isOver with single cursor )
+                 isOver = dist < 0.6; // Threshold matching geometry roughly
+                 
+                 // Update Local & Global Hover
+                 if (localHover !== isOver) {
+                     setLocalHover(isOver);
+                     setHovered(isOver ? (label || 'Box') : null); // Sync global
+                     if (isOver) playSound.playHover();
                      
-                     // Increment
-                     dwellTimerRef.current += 1/60; // Approx 1 frame
-                     
-                     const progress = Math.min(dwellTimerRef.current / 1.0, 1);
-                     useStore.getState().setDwellProgress(progress);
-                     
-                     if (progress >= 1) {
-                         // TRIGGER CLICK
-                         playSound.playClick();
-                         setSelected(label || 'Unknown');
-                         if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
-                         dwellTimerRef.current = 0;
+                     // Reset Dwell if lost hover
+                     if (!isOver) {
                          useStore.getState().setDwellProgress(0);
                      }
-                 } else {
-                     dwellTimerRef.current = 0;
                  }
+                 
+                 // --- INTERACTION LOGIC ---
+                 if (trackingMode === 'HAND') {
+                     // Hand Click (Pinch)
+                     if (isOver && hand.gesture === 'PINCH') {
+                         if (!isSelected) {
+                            playSound.playClick();
+                            setSelected(label || 'Unknown');
+                            if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
+                         }
+                     }
+                     dwellTimerRef.current = 0; // Reset dwell if hands are active
+                 } else {
+                     // Face Dwell Click
+                     if (isOver && !isSelected) {
+                         // Check if this box is the globally hovered one (to avoid multi-trigger)
+                         // ( Implicitly true if isOver with single cursor )
+                         
+                         // Increment
+                         dwellTimerRef.current += 1/60; // Approx 1 frame
+                         
+                         const progress = Math.min(dwellTimerRef.current / 1.0, 1);
+                         useStore.getState().setDwellProgress(progress);
+                         
+                         if (progress >= 1) {
+                             // TRIGGER CLICK
+                             playSound.playClick();
+                             setSelected(label || 'Unknown');
+                             if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
+                             dwellTimerRef.current = 0;
+                             useStore.getState().setDwellProgress(0);
+                         }
+                     } else {
+                         dwellTimerRef.current = 0;
+                     }
+                }
+            } else {
+                if (localHover) {
+                    setLocalHover(false);
+                    setHovered(null);
+                    useStore.getState().setDwellProgress(0);
+                    dwellTimerRef.current = 0;
+                }
             }
         } else {
-            if (localHover) {
-                setLocalHover(false);
-                setHovered(null);
-                useStore.getState().setDwellProgress(0);
-                dwellTimerRef.current = 0;
-            }
+            // MOUSE MODE
+            // Handled by onClick handlers, but we might want to ensure state is clean
+            // e.g., if we switched form EYE to MOUSE while hovering, localHover might be stuck?
+            // No, because components re-render. But local state persists.
+            // Let's rely on onPointerOut to clear things if mouse leaves.
         }
         
         // --- ANIMATION & VISUALS ---
@@ -147,9 +153,48 @@ export const InteractiveBox = ({ position, color = "#00f0ff", label }: Interacti
         }
     });
 
+    const handleMouseInteraction = () => {
+         // Only trigger if in MOUSE mode (or handled by R3F events generally)
+         // But wait, R3F onClick works with mouse.
+         // If we are in HAND/EYE mode, we want to IGNORE mouse clicks maybe?
+         // User didn't say to ignore mouse in other modes, but MOUSE mode specifically uses mouse as input.
+         // Standard behavior: Mouse works always?
+         // User request: "when no tracking is enabled... also make the mouse movements and click work as our data input"
+         // This implies mouse might NOT work effectively in other modes? 
+         // But usually R3F mouse works out of the box.
+         // Let's ensure it works in MOUSE mode.
+         
+         const { trackingMode } = useStore.getState();
+         if (trackingMode === 'MOUSE') {
+             if (!isSelected) {
+                 playSound.playClick();
+                 setSelected(label || 'Unknown');
+                 if (label) import('../../utils/voice').then(({ speak }) => speak(`You selected: ${label}`));
+             }
+         }
+    };
+
     return (
         <group position={position}>
-            <mesh ref={meshRef}>
+            <mesh 
+                ref={meshRef}
+                onClick={handleMouseInteraction}
+                onPointerOver={() => {
+                    const { trackingMode } = useStore.getState();
+                    if (trackingMode === 'MOUSE') {
+                         setLocalHover(true);
+                         setHovered(label || 'Box');
+                         playSound.playHover();
+                    }
+                }}
+                onPointerOut={() => {
+                    const { trackingMode } = useStore.getState();
+                    if (trackingMode === 'MOUSE') {
+                         setLocalHover(false);
+                         setHovered(null);
+                    }
+                }}
+            >
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial 
                     ref={materialRef}

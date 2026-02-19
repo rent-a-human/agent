@@ -5,10 +5,14 @@ import { useStore } from '../store/useStore';
 
 export const useFaceTracking = (videoElement: HTMLVideoElement | null) => {
     const setFace = useStore((state) => state.setFace);
+    const trackingMode = useStore((state) => state.trackingMode);
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
-        if (!videoElement) return;
+        if (!videoElement || trackingMode !== 'EYE') {
+            setIsReady(false);
+            return;
+        }
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
@@ -24,14 +28,6 @@ export const useFaceTracking = (videoElement: HTMLVideoElement | null) => {
         });
 
         faceMesh.onResults((results: Results) => {
-            const now = Date.now();
-            const handsActive = (now - useStore.getState().lastHandActivity) < 5000;
-
-            if (handsActive) {
-                setFace({ present: false });
-                return;
-            }
-
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 const nose = landmarks[1];
@@ -59,10 +55,7 @@ export const useFaceTracking = (videoElement: HTMLVideoElement | null) => {
 
         const camera = new Camera(videoElement, {
             onFrame: async () => {
-                const now = Date.now();
-                const timeSinceHands = now - useStore.getState().lastHandActivity;
-
-                if (timeSinceHands > 4000) {
+                if (useStore.getState().trackingMode === 'EYE') {
                     await faceMesh.send({ image: videoElement });
                 }
             },
@@ -75,10 +68,12 @@ export const useFaceTracking = (videoElement: HTMLVideoElement | null) => {
         });
 
         return () => {
-            // Cleanup if needed
+            camera.stop();
+            faceMesh.close();
+            setIsReady(false);
         };
 
-    }, [videoElement, setFace]);
+    }, [videoElement, setFace, trackingMode]);
 
     return { isReady };
 };

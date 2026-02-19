@@ -7,6 +7,7 @@ import { InteractiveBox } from './InteractiveBox';
 import { HologramPanel } from './HologramPanel';
 import { VideoPanel } from './VideoPanel';
 import { WebPanel } from './WebPanel';
+import { TrackingToggle } from './TrackingToggle';
 import { useHandRaycaster } from '../../hooks/useHandRaycaster';
 import { CameraController } from './CameraController';
 
@@ -39,6 +40,8 @@ export const Scene = () => {
                 <InteractiveBox position={[-1.5, 0, 0]} label="System" />
                 <InteractiveBox position={[1.5, 0, 0]} label="Data" color="#ff0055" />
                 <InteractiveBox position={[0, 1.2, 0]} label="Security" color="#00ff00" />
+                
+                <TrackingToggle />
 
                 <HologramPanel 
                     position={[-2.5, 1, -1]} 
@@ -48,10 +51,10 @@ export const Scene = () => {
                 />
                 
                 <WebPanel 
-                    position={[3.5, 1, -1]} 
+                    position={[5.5, 1, -1]} 
                     rotation={[0, -0.5, 0]} 
                     scale={[0.35, 0.35, 0.35]}
-                    url="http://localhost:5174/chess/"
+                    url="https://rent-a-human.github.io/chess/"
                     title="TACTICAL STRATEGY"
                 />
 

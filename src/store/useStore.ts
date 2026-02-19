@@ -42,6 +42,12 @@ interface AppState {
     dwellProgress: number; // 0 to 1
     selectedObject: string | null;
 
+    trackingMode: 'EYE' | 'HAND' | 'MOUSE';
+    setTrackingMode: (mode: 'EYE' | 'HAND' | 'MOUSE') => void;
+
+    joystickInput: { x: number; y: number };
+    setJoystickInput: (input: { x: number; y: number }) => void;
+
     setHand: (handedness: 'left' | 'right', data: Partial<HandState>) => void;
     setFace: (data: Partial<FaceState>) => void;
     setDwellProgress: (progress: number) => void;
@@ -83,6 +89,10 @@ export const useStore = create<AppState>((set) => ({
     hoveredObject: null,
     dwellProgress: 0,
     selectedObject: null,
+    trackingMode: 'EYE',
+    joystickInput: { x: 0, y: 0 },
+    setTrackingMode: (mode) => set({ trackingMode: mode }),
+    setJoystickInput: (input) => set({ joystickInput: input }),
     setHand: (handedness, data) =>
         set((state) => {
             const isPresent = data.present !== false;
