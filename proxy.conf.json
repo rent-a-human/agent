@@ -1,0 +1,34 @@
+{
+    "/gemini-api": {
+        "target": "https://generativelanguage.googleapis.com",
+        "secure": true,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/gemini-api": ""
+        }
+    },
+    "/claude-api": {
+        "target": "https://api.anthropic.com",
+        "secure": true,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/claude-api": ""
+        }
+    },
+    "/local-api": {
+        "target": "http://localhost:3000",
+        "secure": false,
+        "changeOrigin": true,
+        "rewrite": {
+            "^/local-api": ""
+        }
+    },
+    "/xai-api": {
+        "target": "https://api.x.ai",
+        "secure": true,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/xai-api": ""
+        }
+    }
+}

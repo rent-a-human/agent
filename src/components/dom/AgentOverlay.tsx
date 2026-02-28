@@ -2,10 +2,13 @@ import Agent, { type AppConfig } from 'agent-neo';
 import { useStore } from '../../store/useStore';
 
 export const AgentOverlay = () => {
+    // If VITE_API_URL is supplied (i.e. Railway URL in GitHub Pages), use it explicitly. Otherwise (local dev) fallback to relative proxy.
+    const apiUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
+
     const agentConfig: AppConfig = {
         showStopButton: true,
         agentName: 'Jarvis',
-        mcpServers: ['/mcp/sse'],
+        mcpServers: [apiUrl ? `${apiUrl}/mcp/sse` : '/mcp/sse'],
         actionLabel: 'Commands',
         systemRole: `You are Jarvis, a highly capable AI assistant controlling a 3D dashboard.
         CRITICAL DIRECTIVES:
@@ -58,7 +61,7 @@ export const AgentOverlay = () => {
             }
         ],
         llms: [
-            { name: "Local Agent (minimax)", provider: 'api-llm', apiKey: 'none', baseUrl: import.meta.env.BASE_URL + 'local-api/agent' },
+            { name: "Local Agent (minimax)", provider: 'api-llm', apiKey: 'none', baseUrl: apiUrl ? `${apiUrl}/agent` : import.meta.env.BASE_URL + 'local-api/agent' },
             { name: "Gemini 2.5 Flash", provider: 'gemini', model: 'gemini-2.5-flash', apiKey: localStorage.getItem('GEMINI_API_KEY') || import.meta.env.VITE_GEMINI_API || '', baseUrl: import.meta.env.DEV ? '/gemini-api/v1beta/models' : 'https://generativelanguage.googleapis.com/v1beta/models' },
             { name: "Claude 3.5 Sonnet", provider: 'claude', model: 'claude-3-5-sonnet-20240620', apiKey: localStorage.getItem('CLAUDE_API_KEY') || import.meta.env.VITE_CLAUDE_API || '', baseUrl: import.meta.env.DEV ? '/claude-api/v1/messages' : 'https://api.anthropic.com/v1/messages' },
             { name: "Grok 2.0", provider: 'xai', model: 'grok-2-latest', apiKey: localStorage.getItem('XAI_API_KEY') || import.meta.env.VITE_XAI_API_KEY || '', baseUrl: import.meta.env.DEV ? '/xai-api/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions' }
