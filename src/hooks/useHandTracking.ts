@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore';
 export const useHandTracking = (videoElement: HTMLVideoElement | null) => {
     const setHand = useStore((state) => state.setHand);
     const trackingMode = useStore((state) => state.trackingMode);
+    const hdMode = useStore((state) => state.hdMode);
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
@@ -22,7 +23,7 @@ export const useHandTracking = (videoElement: HTMLVideoElement | null) => {
 
         hands.setOptions({
             maxNumHands: 2,
-            modelComplexity: 1,
+            modelComplexity: hdMode ? 1 : 0, // modelComplexity 0 for faster performance, 1 for better accuracy
             minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5,
         });
@@ -48,7 +49,7 @@ export const useHandTracking = (videoElement: HTMLVideoElement | null) => {
                         indexTip.x - thumbTip.x,
                         indexTip.y - thumbTip.y
                     );
-                    const isPinching = distance < 0.05;
+                    const isPinching = distance < 0.015;  // Reduced from 0.05 to require closer pinch
 
                     // Calculate scale (distance between wrist and middle finger knuckle)
                     const scale = Math.hypot(
@@ -87,8 +88,8 @@ export const useHandTracking = (videoElement: HTMLVideoElement | null) => {
                     await hands.send({ image: videoElement });
                 }
             },
-            width: 1280,
-            height: 720,
+            width: hdMode ? 1280 : 640,
+            height: hdMode ? 720 : 480,
         });
 
         camera.start().then(() => {
@@ -101,7 +102,7 @@ export const useHandTracking = (videoElement: HTMLVideoElement | null) => {
             setIsReady(false);
         };
 
-    }, [videoElement, setHand, trackingMode]);
+    }, [videoElement, setHand, trackingMode, hdMode]);
 
     return { isReady };
 };

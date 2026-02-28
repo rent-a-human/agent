@@ -1,6 +1,8 @@
 import { useStore } from '../../store/useStore';
 import { JoystickControl } from './JoystickControl';
 import { FullScreenToggle } from './FullScreenToggle';
+import { SettingsButton } from './SettingsButton';
+import { TVDPad } from './TVDPad';
 
 export const HudOverlay = () => {
   const { hands } = useStore();
@@ -56,8 +58,12 @@ export const HudOverlay = () => {
       {/* Joystick Control (Bottom Left, distinct from footer text) */}
       <JoystickControl />
       
-      {/* Fullscreen Toggle (Top Right) */}
+      {/* Top Right Toggles */}
       <FullScreenToggle />
+      <SettingsButton />
+      
+      {/* Bottom Right TV Navigation Fallback */}
+      <TVDPad />
     </div>
   );
 };

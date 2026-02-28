@@ -1,4 +1,5 @@
 import { useStore } from '../../store/useStore';
+import { isTVBrowser } from '../../utils/device';
 
 export const HandVisualizer = () => {
   const leftHand = useStore((state) => state.hands.left);
@@ -34,10 +35,16 @@ export const HandVisualizer = () => {
       {drawHand(rightHand, '#ff0055')}
       
       {/* Debug Info */}
-      <div className="absolute top-4 right-4 bg-black/50 text-white p-4 font-mono text-xs">
+      <div 
+          className="fixed bg-black/50 text-white p-4 font-mono text-xs rounded-br-lg"
+          style={{ top: '1rem', left: '1rem' }}
+      >
         <div>Left: {leftHand.present ? leftHand.gesture : 'LOST'}</div>
         <div>Right: {rightHand.present ? rightHand.gesture : 'LOST'}</div>
-        <div>FPS: --</div>
+        <div className="mt-1 pt-1 border-t border-white/20 text-jarvis-cyan">
+            Device: {isTVBrowser() ? 'Smart TV' : 'Web Browser'}
+        </div>
+        <div className="text-white/50">Build: v3.10</div>
       </div>
     </div>
   );

@@ -4,6 +4,9 @@ import { useHandTracking } from './hooks/useHandTracking';
 import { useFaceTracking } from './hooks/useFaceTracking';
 import { HandVisualizer } from './components/webcam/HandVisualizer';
 import { HudOverlay } from './components/dom/HudOverlay';
+import { SettingsOverlay } from './components/dom/SettingsOverlay';
+import { AgentOverlay } from './components/dom/AgentOverlay';
+import { DebugOverlay } from './components/dom/DebugOverlay';
 import { Scene } from './components/canvas/Scene';
 
 function App() {
@@ -26,6 +29,15 @@ function App() {
 
       {/* HUD UI Layer */}
       <HudOverlay />
+
+      {/* 2D Settings Modal */}
+      <SettingsOverlay />
+
+      {/* Camera Debug Overlay */}
+      <DebugOverlay />
+
+      {/* Agent Neo UI */}
+      <AgentOverlay />
     </div>
   );
 }

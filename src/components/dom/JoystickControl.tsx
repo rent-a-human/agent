@@ -17,7 +17,10 @@ export const JoystickControl = () => {
     };
 
     return (
-        <div className="absolute bottom-8 left-8 z-50 pointer-events-auto opacity-50 hover:opacity-100 transition-opacity">
+        <div 
+            className="fixed z-50 pointer-events-auto opacity-50 hover:opacity-100 transition-opacity"
+            style={{ left: '2rem', bottom: '2rem' }}
+        >
             <Joystick 
                 size={100} 
                 sticky={false} 

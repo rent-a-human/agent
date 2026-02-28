@@ -49,7 +49,7 @@ export const Cursor = () => {
 
   useFrame(() => {
     // Access state directly to avoid re-renders
-    const { hands, face, lastHandActivity, dwellProgress } = useStore.getState();
+    const { hands, face, lastHandActivity, dwellProgress, trackingMode, tvCursor } = useStore.getState();
     const hand = hands.left.present ? hands.left : hands.right; 
     
     // Check Timeout
@@ -67,7 +67,15 @@ export const Cursor = () => {
     }
 
     if (meshRef.current) {
-        if (handsActive && hand.present) {
+        if (trackingMode === 'TV') {
+            // TV navigation logic (fixed crosshair controlled by D-Pad)
+            const x = (tvCursor.x * 2 - 1) * 15;
+            const y = -(tvCursor.y * 2 - 1) * 8;
+
+            meshRef.current.position.set(x, y, 0);
+            meshRef.current.scale.setScalar(1.5); // Slightly larger cursor for TV
+            meshRef.current.visible = true;
+        } else if (trackingMode === 'EYE' && handsActive && hand.present) {
             // --- HAND MODE ---
             const x = -(hand.x - 0.5) * viewport.width; 
             const y = -(hand.y - 0.5) * viewport.height;
