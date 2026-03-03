@@ -33,7 +33,8 @@ export const Scene = () => {
         showChessAssistant, 
         showAnimeAssistant, 
         showRealisticAssistant,
-        scene
+        scene,
+        selectedObject
     } = useStore();
 
     return (
@@ -112,6 +113,16 @@ export const Scene = () => {
                         rotation={[0, 0, 0]} 
                         scale={[0.35, 0.35, 0.35]}
                         videoId="10mQwMDt1tw"
+                    />
+                )}
+                
+                {selectedObject === 'Data' && typeof window !== 'undefined' && (
+                    <WebPanel 
+                        position={[0, 4, -2]} 
+                        rotation={[0, 0, 0]} 
+                        scale={[0.4, 0.4, 0.4]}
+                        url={`${window.location.origin}/agent/tasks`}
+                        title="DATA HUB"
                     />
                 )}
 

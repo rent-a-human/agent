@@ -23,15 +23,20 @@ export default defineConfig({
         rewrite: (path: string) => path.replace(/^.*\/xai-api/, ''),
       },
       '^.*\/local-api': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
         rewrite: (path: string) => path.replace(/^.*\/local-api/, ''),
       },
       '/mcp': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
+      },
+      '/openai-api': {
+        target: 'https://api.openai.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/openai-api/, ''),
       },
     },
   },

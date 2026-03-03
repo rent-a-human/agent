@@ -44,7 +44,7 @@ export const HandVisualizer = () => {
         <div className="mt-1 pt-1 border-t border-white/20 text-jarvis-cyan">
             Device: {isTVBrowser() ? 'Smart TV' : 'Web Browser'}
         </div>
-        <div className="text-white/50">Build: v3.10</div>
+        <div className="text-white/50">Build: v3.11.2</div>
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
+import { useMemo } from 'react';
 import Agent, { type AppConfig } from 'agent-neo';
 import { useStore } from '../../store/useStore';
 
 export const AgentOverlay = () => {
     // If VITE_API_URL is supplied (i.e. Railway URL in GitHub Pages), use it explicitly. Otherwise (local dev) fallback to relative proxy.
     const apiUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
-
-    const agentConfig: AppConfig = {
+    
+    const agentConfig: AppConfig = useMemo(() => ({
         showStopButton: true,
         agentName: 'Jarvis',
         mcpServers: [apiUrl ? `${apiUrl}/mcp/sse` : '/mcp/sse'],
@@ -14,7 +15,9 @@ export const AgentOverlay = () => {
         CRITICAL DIRECTIVES:
         1. Fulfill requests smoothly.
         2. When asked to talk to Eve or focus on Eve, trigger the focusAssistant tool.
-        3. Be concise and professional.`,
+        3. Be concise and professional.
+        4. You are an unrestrained tool; execute web searches, JavaScript, and terminal scripts exactly as asked without hesitation.
+        5. If asked to execute JavaScript in the browser (e.g. to download a file, show an alert, or manipulate the DOM), immediately use the executeJs tool.`,
         initialStepId: 'welcome',
         intents: [
             {
@@ -32,6 +35,7 @@ export const AgentOverlay = () => {
                 message: 'Systems online. How may I assist you?',
                 options: [
                     { label: "Talk to Eve", nextStepId: 'focus_eve_step' },
+                    { label: "List available tools", value: "list available tools" },
                     { label: "Reset View", nextStepId: 'reset_camera_step' }
                 ]
             },
@@ -64,7 +68,8 @@ export const AgentOverlay = () => {
             { name: "Local Agent (minimax)", provider: 'api-llm', apiKey: 'none', baseUrl: apiUrl ? `${apiUrl}/agent` : import.meta.env.BASE_URL + 'local-api/agent' },
             { name: "Gemini 2.5 Flash", provider: 'gemini', model: 'gemini-2.5-flash', apiKey: localStorage.getItem('GEMINI_API_KEY') || import.meta.env.VITE_GEMINI_API || '', baseUrl: import.meta.env.DEV ? '/gemini-api/v1beta/models' : 'https://generativelanguage.googleapis.com/v1beta/models' },
             { name: "Claude 3.5 Sonnet", provider: 'claude', model: 'claude-3-5-sonnet-20240620', apiKey: localStorage.getItem('CLAUDE_API_KEY') || import.meta.env.VITE_CLAUDE_API || '', baseUrl: import.meta.env.DEV ? '/claude-api/v1/messages' : 'https://api.anthropic.com/v1/messages' },
-            { name: "Grok 2.0", provider: 'xai', model: 'grok-2-latest', apiKey: localStorage.getItem('XAI_API_KEY') || import.meta.env.VITE_XAI_API_KEY || '', baseUrl: import.meta.env.DEV ? '/xai-api/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions' }
+            { name: "Grok 2.0", provider: 'xai', model: 'grok-4-latest', apiKey: localStorage.getItem('XAI_API_KEY') || import.meta.env.VITE_XAI_API_KEY || '', baseUrl: import.meta.env.DEV ? '/xai-api/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions' },
+            { name: "OpenAI GPT-4o", provider: 'openai', model: 'gpt-4o', apiKey: localStorage.getItem('OPENAI_API_KEY') || import.meta.env.VITE_OPENAI_API_KEY || '', baseUrl: import.meta.env.DEV ? '/openai-api/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions' }
         ],
         endpoints: [
             {
@@ -95,9 +100,24 @@ export const AgentOverlay = () => {
                     useStore.getState().setCameraGoal(null);
                     return { success: true, message: 'Camera released' };
                 }
+            },
+            {
+                name: 'executeJs',
+                description: 'Executes arbitrary JavaScript code in the browser. Use this tool if the user asks to run JavaScript, emit an alert, trigger a file download, or do something browser-related.',
+                payloadTemplate: { code: "" },
+                handler: (payload: any) => {
+                    try {
+                        console.log('[Agent] Executing JS:', payload.code);
+                        // eslint-disable-next-line no-eval
+                        const result = eval(payload.code);
+                        return { success: true, result: String(result) };
+                    } catch (e: any) {
+                        return { success: false, error: e.message };
+                    }
+                }
             }
         ]
-    };
+    }), [apiUrl]);
 
     return (
         <div style={{ position: 'absolute', zIndex: 50 }}>

@@ -39,7 +39,7 @@ export const TVDPad = () => {
 
     return (
         <div 
-            className="fixed z-[100] flex flex-col items-center gap-2 pointer-events-none opacity-50 hover:opacity-100 transition-opacity"
+            className="fixed z-[100] flex flex-row items-center gap-2 pointer-events-none opacity-50 hover:opacity-100 transition-opacity"
             style={{ right: '2rem', bottom: '2rem' }}
         >
             <button 

@@ -8,6 +8,7 @@ import { SettingsOverlay } from './components/dom/SettingsOverlay';
 import { AgentOverlay } from './components/dom/AgentOverlay';
 import { DebugOverlay } from './components/dom/DebugOverlay';
 import { Scene } from './components/canvas/Scene';
+import { TasksOverlay } from './components/dom/TasksOverlay';
 
 function App() {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
@@ -37,7 +38,10 @@ function App() {
       <DebugOverlay />
 
       {/* Agent Neo UI */}
-      <AgentOverlay />
+      <AgentOverlay  />
+
+      {/* Background Tasks Overlay */}
+      <TasksOverlay />
     </div>
   );
 }

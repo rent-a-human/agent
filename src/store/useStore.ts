@@ -157,12 +157,12 @@ export const useStore = create<AppState>((set) => ({
     showVideoPanel: false, // Default heavy off
     showChessAssistant: true,
     showAnimeAssistant: true,
-    showRealisticAssistant: false, // Default heavy off
+    showRealisticAssistant: true, // Default heavy off
     clampSensibility: 1.0,
     isSettingsOpen: false,
     isSettingsOverlayOpen: false,
     gravity: 1.0,
-    minHeight: 1.8,
+    minHeight: 1.5,
     cameraGoal: null,
     debugCameraState: null,
     setTrackingMode: (mode) => set({ trackingMode: mode }),
