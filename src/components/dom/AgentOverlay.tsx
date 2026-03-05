@@ -35,6 +35,7 @@ export const AgentOverlay = () => {
                 message: 'Systems online. How may I assist you?',
                 options: [
                     { label: "Talk to Eve", nextStepId: 'focus_eve_step' },
+                    { label: "Sign a Pdf", nextStepId: 'sign_pdf_start' },
                     { label: "List available tools", value: "list available tools" },
                     { label: "Reset View", nextStepId: 'reset_camera_step' }
                 ]
@@ -62,6 +63,44 @@ export const AgentOverlay = () => {
                 triggerAction: 'resetCamera',
                 actionType: 'api',
                 nextStepId: 'welcome'
+            },
+            {
+                id: 'sign_pdf_start',
+                message: 'Please upload the PDF document you want to sign.',
+                inputTarget: 'pdfPath',
+                nextStepId: 'sign_pdf_name'
+            },
+            {
+                id: 'sign_pdf_name',
+                message: 'Great. What is the full name of the signer as it appears in the document?',
+                inputTarget: 'signerName',
+                nextStepId: 'sign_pdf_image'
+            },
+            {
+                id: 'sign_pdf_image',
+                message: 'Finally, please upload an image of their signature (PNG/JPG).',
+                inputTarget: 'signaturePath',
+                nextStepId: 'sign_pdf_execute'
+            },
+            {
+                id: 'sign_pdf_execute',
+                message: 'Applying digital signature to document...',
+                triggerAction: 'sign_pdf_document',
+                actionType: 'api',
+                fixedPayload: {
+                    pdfFile: '{{pdfPath}}',
+                    signerName: '{{signerName}}',
+                    signatureImage: '{{signaturePath}}'
+                },
+                nextStepId: 'sign_pdf_download'
+            },
+            {
+                id: 'sign_pdf_download',
+                message: 'Your document is ready!',
+                options: [
+                    { label: "Download Signed PDF", actionType: 'download', externalLink: '{{lastResult}}' },
+                    { label: "Start Over", nextStepId: 'welcome' }
+                ]
             }
         ],
         llms: [
