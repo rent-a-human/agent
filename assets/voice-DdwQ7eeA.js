@@ -1,0 +1,1 @@
+const t=i=>{if(!window.speechSynthesis)return;window.speechSynthesis.cancel();const e=new SpeechSynthesisUtterance(i),s=window.speechSynthesis.getVoices().find(n=>n.name.includes("Google US English")||n.name.includes("Samantha")||n.name.includes("Zira")||n.name.includes("Female"));s&&(e.voice=s),e.pitch=1,e.rate=1,window.speechSynthesis.speak(e)};export{t as speak};
