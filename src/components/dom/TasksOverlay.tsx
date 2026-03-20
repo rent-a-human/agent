@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getApiUrl } from '../../config';
 
 interface Task {
     id: string;
@@ -11,15 +12,11 @@ interface Task {
 export const TasksOverlay = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [responses, setResponses] = useState<Record<string, string>>({});
-    
-    // Derived configuration
-    const apiUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
-    const apiBaseUrl = apiUrl ? apiUrl : ((import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3000');
 
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const res = await fetch(`${apiBaseUrl}/tasks`);
+                const res = await fetch(getApiUrl('/tasks'));
                 const json = await res.json();
                 if (json.success) {
                     setTasks(json.tasks);
@@ -43,7 +40,7 @@ export const TasksOverlay = () => {
         if (!response) return;
 
         try {
-            await fetch(`${apiBaseUrl}/tasks/${taskId}/respond`, {
+            await fetch(getApiUrl(`/tasks/${taskId}/respond`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ response })
@@ -76,7 +73,7 @@ export const TasksOverlay = () => {
                                 {task.status}
                             </span>
                         </div>
-                        <p className="text-white/90 line-clamp-2 leading-relaxed">{task.description}</p>
+                        <p className="text-white/90 line-clamp-2 leading-relaxed" style={{ overflow: 'auto' }}>{task.description}</p>
                         
                         {task.status === 'BLOCKED' && task.blockedReason && (
                             <div className="mt-3 p-2 bg-black/40 rounded border border-orange-500/30">

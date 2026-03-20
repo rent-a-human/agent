@@ -9,6 +9,7 @@ export const AgentOverlay = () => {
     const agentConfig: AppConfig = useMemo(() => ({
         showStopButton: true,
         agentName: 'Jarvis',
+        serverUrl: apiUrl || undefined,
         mcpServers: [apiUrl ? `${apiUrl}/mcp/sse` : '/mcp/sse'],
         actionLabel: 'Commands',
         systemRole: `You are Jarvis, a highly capable AI assistant controlling a 3D dashboard.
@@ -35,6 +36,7 @@ export const AgentOverlay = () => {
                 message: 'Systems online. How may I assist you?',
                 options: [
                     { label: "Talk to Eve", nextStepId: 'focus_eve_step' },
+                    { label: "3D Assembly", value: "window.location.href = '/agent/cad/assembly'" },
                     { label: "Sign a Pdf", nextStepId: 'sign_pdf_start' },
                     { label: "List available tools", value: "list available tools" },
                     { label: "Reset View", nextStepId: 'reset_camera_step' }
